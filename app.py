@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_mysqldb import MySQL
 
 app = Flask(__name__)
@@ -20,6 +20,7 @@ def register():
     if request.method == 'GET':
         return render_template('register.html', titolo='Register')
     else:
+        #print("SONO QUI")
         nome = request.form.get("nome")
         cognome = request.form.get("cognome")
         username = request.form.get("username")
@@ -27,6 +28,11 @@ def register():
         confermaPassword = request.form.get('confermaPassword')
         
         
+        query = "INSERT INTO users VALUES (%s,%s,%s,%s)"
+        cursor = mysql.connection.cursor()
+        cursor.execute(query, (username,password,nome,cognome))
+        mysql.connection.commit()
+        return redirect('/')
 
 @app.route("/login")
 def login():
