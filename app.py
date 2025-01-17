@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_mysqldb import MySQL
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-
+app.secret_key = "AudiS3"
 app.config['MYSQL_HOST'] = '138.41.20.102'
 app.config['MYSQL_PORT'] = 53306
 app.config['MYSQL_USER'] = 'ospite'
@@ -27,12 +28,27 @@ def register():
         password = request.form.get('password')
         confermaPassword = request.form.get('confermaPassword')
         
-        
-        query = "INSERT INTO users VALUES (%s,%s,%s,%s)"
-        cursor = mysql.connection.cursor()
-        cursor.execute(query, (username,password,nome,cognome))
-        mysql.connection.commit()
-        return redirect('/')
+        #Controllo password=confermaPassword
+        if password==confermaPassword:     
+            #Controllo username non in uso
+            querySelect = "SELECT * FROM users WHERE username=%s"
+            cursor = mysql.connection.cursor()
+            cursor.execute(querySelect, (username,))
+            data = cursor.fetchall()
+
+            if len(data)<1:
+                #Inserimento nel DB
+                query = "INSERT INTO users VALUES (%s,%s,%s,%s)"
+                cursor.execute(query, (username,generate_password_hash(password),nome,cognome))
+                mysql.connection.commit()
+                return redirect(url_for('register'))
+            else:
+                flash("Username già presente")
+                return redirect(url_for('register'))
+        else:
+            flash("Le password non corrispondono")
+            return redirect(url_for('register'))
+
 
 @app.route("/login")
 def login():
